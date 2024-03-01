@@ -16,7 +16,9 @@ RUN apt-get update && \
     # streamdeck dependencies
     python3-pip libhidapi-libusb0 libxcb-xinerama0 \
     # streamdeck dependencies missed by online tutorials
-    ffmpeg libsm6 libxext6 libegl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 libxcb-iccm4
+    ffmpeg libsm6 libxext6 libegl1 libxcb-cursor0 libxkbcommon-x11-0 \
+    libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 \
+    libxcb-icccm4
 
 ###########################
 #  USER WITH SUDO ACCESS  #
