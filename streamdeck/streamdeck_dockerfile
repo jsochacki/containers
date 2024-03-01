@@ -1,0 +1,56 @@
+FROM ubuntu:22.04
+
+ARG USER
+ARG UID
+ARG GID
+ARG TZ
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    \
+    # user packages
+    sudo \
+    # streamdeck dependencies
+    python3-pip libhidapi-libusb0 libxcb-xinerama0 \
+    # streamdeck dependencies missed by online tutorials
+    ffmpeg libsm6 libxext6 libegl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 libxcb-iccm4
+
+###########################
+#  USER WITH SUDO ACCESS  #
+###########################
+
+RUN \
+    useradd -rm -d /home/$USER -s /bin/bash -g 100 -G sudo -u $UID $USER && \
+    groupadd -g $GID $USER && \
+    echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee "/etc/sudoers.d/dont-prompt-$USER-for-sudo-password"
+
+########################
+#  SOFTWARE DIRECTORY  #
+########################
+
+USER $USER
+RUN mkdir -p /home/$USER/foss
+
+###################
+#  STREAMDECK UI  #
+###################
+
+RUN \
+    pip3 install --user streamdeck_ui
+
+###############
+#  ENV SETUP  #
+###############
+
+RUN \
+    echo "export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH" >> /home/$USER/.bashrc
+
+##########
+#  DONE  #
+##########
+
+USER $USER
+WORKDIR /home/$USER
