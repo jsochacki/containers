@@ -35,6 +35,7 @@ RUN \
 
 USER $USER
 RUN mkdir -p /home/$USER/foss
+RUN mkdir -p /home/$USER/files
 
 ###################
 #  STREAMDECK UI  #
