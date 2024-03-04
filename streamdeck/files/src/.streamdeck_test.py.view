@@ -1,6 +1,6 @@
 let s:so_save = &g:so | let s:siso_save = &g:siso | setg so=0 siso=0 | setl so=-1 siso=-1
 argglobal
-if bufexists(fnamemodify("/mnt/hgfs/git/repos/containers/streamdeck/files/src", ":p")) | buffer /mnt/hgfs/git/repos/containers/streamdeck/files/src | else | edit /mnt/hgfs/git/repos/containers/streamdeck/files/src | endif
+if bufexists(fnamemodify("/mnt/hgfs/git/repos/containers/streamdeck/files/src/streamdeck_test.py", ":p")) | buffer /mnt/hgfs/git/repos/containers/streamdeck/files/src/streamdeck_test.py | else | edit /mnt/hgfs/git/repos/containers/streamdeck/files/src/streamdeck_test.py | endif
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -11,11 +11,11 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 18 - ((17 * winheight(0) + 17) / 34)
+let s:l = 160 - ((67 * winheight(0) + 34) / 69)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 18
+keepjumps 160
 normal! 0
 let &g:so = s:so_save | let &g:siso = s:siso_save
 doautoall SessionLoadPost

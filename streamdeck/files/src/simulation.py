@@ -8,7 +8,7 @@ import logging
 
 STOP = False
 
-TASK_PATH = 
+TASK_PATH = "/bin/bash"
 
 def get_env_var(var_name):
     try:
