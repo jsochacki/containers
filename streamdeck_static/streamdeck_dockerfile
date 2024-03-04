@@ -15,21 +15,12 @@ RUN apt-get update && \
     udev \
     # user packages
     sudo \
-    # streamdeck development dependencies
-    python3-pip python3-setuptools \
-    # Install system packages needed for the default LibUSB HIDAPI backend
-    libudev-dev libusb-1.0-0-dev libhidapi-libusb0 \
-    # Install system packages needed for the Python Pillow package installation
-    libjpeg-dev zlib1g-dev libopenjp2-7 libtiff5
-
-##################
-#  FONT INSTALL  #
-##################
-
-RUN \
-    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
-RUN apt-get install -y \
-    ttf-mscorefonts-installer
+    # streamdeck dependencies
+    python3-pip libhidapi-libusb0 libxcb-xinerama0 \
+    # streamdeck dependencies missed by online tutorials
+    ffmpeg libsm6 libxext6 libegl1 libxcb-cursor0 libxkbcommon-x11-0 \
+    libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 \
+    libxcb-icccm4
 
 ###########################
 #  USER WITH SUDO ACCESS  #
@@ -47,6 +38,7 @@ RUN \
 USER $USER
 RUN mkdir -p /home/$USER/foss
 RUN mkdir -p /home/$USER/files
+#RUN mkdir -p /etc/udev/rules.d
 
 #####################
 #  HARDWARE ACCESS  #
@@ -62,15 +54,12 @@ RUN /home/$USER/install_streamdeck_rules.sh
 RUN \
     python3 -m pip install --upgrade pip
 
-#########################################
-#  STREAMDECK DEVELOPMENT DEPENDENCIES  #
-#########################################
+###################
+#  STREAMDECK UI  #
+###################
 
 RUN \
-    python3 -m pip install wheel --user && \
-    python3 -m pip install pillow --user && \
-    python3 -m pip install streamdeck --user && \
-    python3 -m pip install pillow --user
+    python3 -m pip install streamdeck-ui --user
 
 ###############
 #  ENV SETUP  #

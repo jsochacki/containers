@@ -1,0 +1,143 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    \
+    # generic packages
+    build-essential cmake git inetutils-ping inetutils-traceroute netcat net-tools sudo unzip usbutils vim wget udev \
+    \
+    # UHD dependencies
+    autoconf automake build-essential ccache cmake cpufrequtils doxygen ethtool \
+    g++ git inetutils-tools libboost-all-dev libncurses5 libncurses5-dev libusb-1.0-0 \
+    libusb-1.0-0-dev libusb-dev python3-dev python3-mako python3-numpy python3-requests \
+    python3-scipy python3-setuptools python3-ruamel.yaml \
+    \
+    # GNU Radio dependencies
+    git cmake g++ libboost-all-dev libgmp-dev swig python3-numpy python3-mako python3-sphinx python3-lxml doxygen libfftw3-dev \
+    libsdl1.2-dev libgsl-dev libqwt-qt5-dev libqt5opengl5-dev python3-pyqt5 liblog4cpp5-dev libzmq3-dev python3-yaml python3-click \
+    python3-click-plugins python3-zmq python3-scipy python3-gi python3-gi-cairo gir1.2-gtk-3.0 libcodec2-dev libgsm1-dev \
+    pybind11-dev python3-matplotlib libsndfile1-dev python3-pip libsoapysdr-dev soapysdr-tools libiio-dev libad9361-dev libspdlog-dev \
+    python3-packaging python3-jsonschema castxml clang-format \
+    \
+    # gr-sigmf dependencies
+    rapidjson-dev
+
+###########################
+#  USER WITH SUDO ACCESS  #
+###########################
+
+RUN \
+    useradd -rm -d /home/gnssuser -s /bin/bash -g 100 -G sudo -u 1000 gnssuser && \
+    groupadd -g 1000 gnssuser && \
+    echo "gnssuser ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee "/etc/sudoers.d/dont-prompt-gnssuser-for-sudo-password"
+
+########################
+#  SOFTWARE DIRECTORY  #
+########################
+
+USER gnssuser
+RUN mkdir -p /home/gnssuser/foss
+
+#########
+#  UHD  #
+#########
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/EttusResearch/uhd && cd uhd && git checkout v4.6.0.0 && \
+    mkdir /home/gnssuser/foss/uhd/host/build && \
+    cd /home/gnssuser/foss/uhd/host/build && \
+    cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig && \
+    sudo /usr/local/lib/uhd/utils/uhd_images_downloader.py
+
+##########
+#  FTDI  #
+##########
+
+RUN \
+    cd /home/gnssuser/foss && \
+    wget https://ftdichip.com/wp-content/uploads/2022/07/libftd2xx-x86_64-1.4.27.tgz && \
+    tar zxvf libftd2xx-x86_64-1.4.27.tgz --one-top-level && \
+    cd /home/gnssuser/foss/libftd2xx-x86_64-1.4.27/release && \
+    sudo cp ftd2xx.h /usr/include/ && \
+    sudo cp WinTypes.h /usr/include/ && \
+    sudo ldconfig && \
+    sudo cp build/libftd2xx.* /usr/local/lib/ && \
+    sudo chmod 0755 /usr/local/lib/libftd2xx.so.1.4.27 && \
+    sudo ln -sf /usr/local/lib/libftd2xx.so.1.4.27 /usr/local/lib/libftd2xx.so && \
+    sudo ldconfig
+
+######################
+#  SIGNAL HOUND SDK  #
+######################
+ 
+RUN \
+    cd /home/gnssuser/foss && \
+    wget https://signalhound.com/sigdownloads/SDK/signal_hound_sdk_11_08_23.zip -O signal_hound_sdk.zip && \
+    unzip signal_hound_sdk.zip && \
+    cd /home/gnssuser/foss/signal_hound_sdk/device_apis/bb_series/include && \
+    sudo cp bb_api.h /usr/include/ && \
+    cd /home/gnssuser/foss/signal_hound_sdk/device_apis/bb_series/lib/linux/Ubuntu\ 18.04/ && \
+    sudo cp libbb_api.so.5.0.5 /usr/local/lib/ && \
+    sudo chmod 0755 /usr/local/lib/libbb_api.so.5.0.5 && \
+    sudo ln -sf /usr/local/lib/libbb_api.so.5.0.5 /usr/local/lib/libbb_api.so && \
+    sudo ldconfig
+
+########
+# VOLK #
+########
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/gnuradio/volk && cd volk && git checkout v3.1.0 && git submodule update --init && \
+    mkdir /home/gnssuser/foss/volk/build && \
+    cd /home/gnssuser/foss/volk/build && \
+    cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig
+
+###############
+#  GNU Radio  #
+############### 
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/gnuradio/gnuradio && cd gnuradio && git checkout v3.10.9.1 && \
+    mkdir /home/gnssuser/foss/gnuradio/build && \
+    cd /home/gnssuser/foss/gnuradio/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 .. && \
+    make -j$(nproc) && sudo make install && sudo ldconfig
+
+#############
+#  gr-bb60  #
+#############
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/ziflabs/gr-bb60 && \
+    mkdir /home/gnssuser/foss/gr-bb60/build && \
+    cd /home/gnssuser/foss/gr-bb60/build && \
+    cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig
+
+##############
+#  gr-sigmf  #
+##############
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/skysafe/gr-sigmf && \
+    mkdir /home/gnssuser/foss/gr-sigmf/build && \
+    cd /home/gnssuser/foss/gr-sigmf/build && \
+    cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig
+
+##################
+#  gr-pdu_utils  #
+##################
+
+RUN \
+    cd /home/gnssuser/foss && \
+    git clone https://github.com/sandialabs/gr-pdu_utils && \
+    cd /home/gnssuser/foss/gr-pdu_utils && git checkout maint-3.10 && \
+    mkdir build && cd build && \
+    cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig
