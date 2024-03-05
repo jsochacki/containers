@@ -1,14 +1,15 @@
-import threading
+#!/usr/bin/env python3
+
 import time
 
 import os
 import sys
-import traceback
 import logging
 import subprocess
 
-STOP = False
-
+TERMINAL_COMMAND = "/usr/bin/gnome-terminal"
+MERCURY_DIRECTORY = "/home/blackwell/mercury"
+GOOGLE_EARTH_COMMAND = "/usr/bin/google-earth-pro"
 TASK_COMMAND = "/snap/bin/task"
 
 def get_env_var(var_name):
@@ -31,7 +32,9 @@ def setup_logger():
 
 class simulation:
     def __init__(self):
-        log = setup_logger()
+        self.log = setup_logger()
+        self.terminal_command = [TERMINAL_COMMAND, "--", "bash", "-c"]
+        self.manifold_sleep_time = 20.0
        # Record Threads
         self.threads = []
 
@@ -42,44 +45,44 @@ class simulation:
         if result.stderr:
             self.log.error("Command Error: %s", result.stderr)
 
-    def form_load_command(self, location):
-        command = [TASK_COMMAND, "load", "--", location]
-        return command
+    def form_task_command(self, task_command, location):
+        command = [f'\"cd {MERCURY_DIRECTORY} && {TASK_COMMAND} {task_command} -- {location}\"']
+        print(command)
+        return (self.terminal_command + command)
 
-    def form_hello_world_command(self, location):
-        command = ["/bin/bash", "echo", "Hello world", location]
-        return command
+    def launch_simulation(self, location):
+        command = self.form_task_command("load", location)
+        print(command)
+        self.execute_command(command)
+
+        command = self.form_task_command("manifold-real", location)
+        print(command)
+        self.execute_command(command)
+
+        self.log.warning(f'Sleeping for {self.manifold_sleep_time} seconds to give the manifold time to start')
+        time.sleep(self.manifold_sleep_time)
+
+        command = self.form_task_command("visualizer", location)
+        print(command)
+        self.execute_command(command)
+
+        command = [GOOGLE_EARTH_COMMAND, "&"]
+        print(command)
+        self.execute_command(command)
+
+        command = self.form_task_command("simulator", location)
+        print(command)
+        self.execute_command(command)
+ 
 
     def estonia_scenario(self):
-        command = self.form_load_command("estonia")
-        self.execute_command(command)
+        self.launch_simulation("estonia")
 
     def somalian_scenario(self):
-        command = self.form_hello_world_command("somalia")
-        self.execute_command(command)
+        self.launch_simulation("somalian")
 
     def jersey_scenario(self):
-        print("this")
-
-    def stop_simulation_threads(self):
-        global STOP
-        STOP = True
-        for t in self.threads:
-            t.join()
-        STOP = False
-
-    def _flood(self, func):
-        def run():
-            while True:
-                global STOP
-                if STOP:
-                    break
-                func()
-                time.sleep(0.0001)
-
-        t = threading.Thread(target=run)
-        t.start()
-        self.threads.append(t)
+        self.launch_simulation("jersey")
 
 if __name__ == "__main__":
-   simulation()
+   object = simulation()

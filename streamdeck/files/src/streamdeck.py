@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import threading
+import signal
 
 import streamdeck_test
 import simulation
@@ -21,6 +22,7 @@ FONT = "/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf"
 
 class streamdeck:
     def __init__(self) -> None:
+        signal.signal(signal.SIGINT, self.ctrl_c_handler)
         self.under_simulation = False
         self.simulation = simulation.simulation()
         self.keys = {
@@ -53,6 +55,11 @@ class streamdeck:
 
         self.deck.set_key_callback(self.key_change_callback)
         self.setup_keys()
+
+    def ctrl_c_handler(self):
+        print('Caught SIGINT signal, exiting streamdeck application!')
+        self.deck.close()
+        sys.exit(0)
 
     def setup_keys(self):
         self.deck.reset()
@@ -138,6 +145,9 @@ class streamdeck:
                 self.under_simulation = True
             self.keys[key]["callback"]()
 
+    def run(self):
+        while True:
+            pass
 
 
 if __name__ == "__main__":
@@ -145,7 +155,8 @@ if __name__ == "__main__":
     if result:
         sys.exit()
 
-    ui = streamdeck()
+    control = streamdeck()
+    control.run()
 
     # Wait until all application threads have terminated (for this example,
     # this is when all deck handles are closed).
