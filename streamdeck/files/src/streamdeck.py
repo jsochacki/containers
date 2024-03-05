@@ -21,6 +21,7 @@ FONT = "/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf"
 
 class streamdeck:
     def __init__(self) -> None:
+        self.under_simulation = False
         self.simulation = simulation.simulation()
         self.keys = {
             0: {
@@ -73,14 +74,14 @@ class streamdeck:
                     1, self._render_key_image(None, FONT, "SINGLE\nINJECTED\nMESSAGE\nSENT")
                 )
                 self.deck.set_key_image(
-                    4, self._render_key_image(os.path.join(IMAGE_PATH, "Return.png"), FONT, "RETURN")
+                    4, self._render_key_image(os.path.join(IMAGE_PATH, "right-arrow.png"), FONT, "RETURN")
                 )
             else:
                 self.deck.set_key_image(
                     1, self._render_key_image(None, FONT, "FLOODING\nBUS")
                 )
                 self.deck.set_key_image(
-                    4, self._render_key_image(os.path.join(IMAGE_PATH, "Exit.png"), FONT, "STOP ATTACK")
+                    4, self._render_key_image(os.path.join(IMAGE_PATH, "left-arrow.png"), FONT, "STOP ATTACK")
                 )
 
     def _render_key_image(self, icon_filename, font_filename, label_text):
@@ -104,7 +105,7 @@ class streamdeck:
             )
 
         else:
-            icon = Image.open(os.path.join(ASSETS_PATH,"blank.png"))
+            icon = Image.open(os.path.join(IMAGE_PATH,"blank.png"))
             image = PILHelper.create_scaled_image(self.deck, icon)
 
             # Load a custom TrueType font and use it to overlay the key index, draw key
