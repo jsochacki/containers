@@ -30,19 +30,16 @@ class streamdeck:
                 "text": "Estonia",
                 "icon": "russian-flag.png",
                 "callback": self.simulation.estonia_scenario,
-                "oneshot": True
             },
             1: {
                 "text": "Somalia",
                 "icon": "somalian-flag.png",
                 "callback": self.simulation.somalian_scenario,
-                "oneshot": True
             },
             2: {
                 "text": "Jersey",
                 "icon": "jersey-flag.png",
                 "callback": self.simulation.jersey_scenario,
-                "oneshot": False
             },
         }
 
@@ -56,7 +53,7 @@ class streamdeck:
         self.deck.set_key_callback(self.key_change_callback)
         self.setup_keys()
 
-    def ctrl_c_handler(self):
+    def ctrl_c_handler(self, sig, frame):
         print('Caught SIGINT signal, exiting streamdeck application!')
         self.deck.close()
         sys.exit(0)
@@ -73,23 +70,15 @@ class streamdeck:
                 self._render_key_image(os.path.join(IMAGE_PATH, image), FONT, text),
             )
 
-    def display_simulation(self, oneshot=False):
+    def display_simulation(self):
         self.deck.reset()
         with self.deck:
-            if oneshot:
-                self.deck.set_key_image(
-                    1, self._render_key_image(None, FONT, "SINGLE\nINJECTED\nMESSAGE\nSENT")
-                )
-                self.deck.set_key_image(
-                    4, self._render_key_image(os.path.join(IMAGE_PATH, "right-arrow.png"), FONT, "RETURN")
-                )
-            else:
-                self.deck.set_key_image(
-                    1, self._render_key_image(None, FONT, "FLOODING\nBUS")
-                )
-                self.deck.set_key_image(
-                    4, self._render_key_image(os.path.join(IMAGE_PATH, "left-arrow.png"), FONT, "STOP ATTACK")
-                )
+            self.deck.set_key_image(
+                1, self._render_key_image(None, FONT, "SIMULATION\nSTARTED")
+            )
+            self.deck.set_key_image(
+                4, self._render_key_image(os.path.join(IMAGE_PATH, "right-arrow.png"), FONT, "RESET")
+            )
 
     def _render_key_image(self, icon_filename, font_filename, label_text):
         # Resize the source image asset to best-fit the dimensions of a single key,
@@ -130,19 +119,16 @@ class streamdeck:
 
         return PILHelper.to_native_format(self.deck, image)
 
-    # Prints key state change information, updates rhe key image and performs any
+    # Prints key state change information, updates the key image and performs any
     # associated actions when a key is pressed.
     def key_change_callback(self, deck, key, state):
         if self.under_simulation and key == 4 and state:
-            # Stop the simulation
-            self.simulation.stop_simulation_threads()
             self.under_simulation = False
             self.setup_keys()
+            self.simulation.kill_simulation()
         elif not self.under_simulation and state and key in self.keys:
-             # Launch the simulation
-            if not key == 5:
-                self.display_simulation(oneshot=self.keys[key]["oneshot"])
-                self.under_simulation = True
+            self.display_simulation()
+            self.under_simulation = True
             self.keys[key]["callback"]()
 
     def run(self):
