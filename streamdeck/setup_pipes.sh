@@ -1,21 +1,17 @@
 #!/bin/bash
 
-#Not safe
-#homedir=$(eval echo ~$USER)
-#Prevents errors due to sudo run setting USER as root
-TMPDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd
-homedir=$(pwd)
-cd $TMPDIR
+UUID=$(id -u $USER)
+PIPEPATH="/var/run/user/$UUID/streampipe"
+SCRIPTPATH="/home/$USER/.local/bin"
 
-mkfifo $TMPDIR/streampipe
+mkfifo $PIPEPATH
 
-echo "#!/bin/bash" > streampipe.sh
-echo "while true: do eval \"$(cat $TMPDIR/streampipe)\"; done" >> streampipe.sh
+echo '#!/bin/bash' > $SCRIPTPATH/streampipe.sh
+echo "while true; do eval \"$(cat $PIPEPATH)\"; done" >> $SCRIPTPATH/streampipe.sh
 
-sudo chmod guo+x streampipe.sh
+sudo chmod guo+x $SCRIPTPATH/streampipe.sh
 
 crontab -l > tempcron
-echo "@reboot $TMPDIR/streampipe.sh" >> tempcron
+echo "@reboot $SCRIPTPATH/streampipe.sh" >> tempcron
 crontab tempcron
 rm tempcron
